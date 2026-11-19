@@ -31,6 +31,8 @@ export class World {
   time = 0;
   covered = false; // nothing 3D is drawn while a full-screen panel covers it
   dim = 0;
+  exposure = 1; // target; eased each frame
+  private exposureNow = 1;
   frames: number[] = [];
   private active = -1;
 
@@ -116,6 +118,8 @@ export class World {
     for (const l of this.lanterns) l.update(t, dt);
     this.rig.update(dt);
     this.sky.update(t, dt, this.rig.camera);
+    this.exposureNow += (this.exposure - this.exposureNow) * Math.min(1, dt * 6);
+    this.post.final.uniforms.uExposure.value = this.exposureNow;
     this.post.final.uniforms.uDim.value = this.dim;
     this.post.final.uniforms.uFlash.value = this.sky.flash;
     this.post.render(t);

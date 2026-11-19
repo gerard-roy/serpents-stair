@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import {
   Action, CLIMBERS, ClimberId, GameEvent, GameState, LADDERS, SERPENTS, SUMMIT, applyAction, callTargets, canLoadDie, canRope,
   charmRelease, climber, newGame, rounds, tileAbove, tileRow,
-} from './rules';
+  nextRandom,
+} from "./rules";
 import { chooseAction } from './rivals';
 import { Hud, PlayerView, Sound, StartOptions } from './types';
 import { World } from './world';
@@ -96,7 +97,7 @@ export class Game {
   private resetWorld() {
     const w = this.world;
     w.fires.beam = 0; w.sky.rain = 1; w.sky.clear = 0;
-    w.rig.stage(null);
+    w.rig.stage(null); w.exposure = 1;
     w.temple.setReach([]);
     this.ropeLine.visible = false;
     this.trail.material.opacity = 0;
@@ -197,6 +198,16 @@ export class Game {
     this.world.temple.setReach(reach, climber(me.id).color);
     this.hud.roll(true);
     this.refreshHud();
+  }
+
+  /** Test hook: put the current climber on a tile and fix the next roll. */
+  debugSet(tile: number, roll?: number, player?: number) {
+    const s = this.state!;
+    const p = player ?? s.current;
+    s.players[p].pos = tile; this.shown[p] = tile; this.place(p, tile);
+    if (roll) for (let i = 0; i < 500; i++) { if (1 + Math.floor(nextRandom(s.seed)[0] * 6) === roll) break; s.seed = (s.seed + 1) | 0; }
+    this.refreshHud(); this.followFocus();
+    if (this.waiting && !this.busy) this.next();
   }
 
   // ------------------------------------------------------------ input
@@ -414,6 +425,7 @@ export class Game {
             // the one hard cut: a close-up on the head
             const h = sm.headPos;
             w.rig.stage(V(h.x + (h.x > 0 ? -1.5 : 1.5), h.y + 0.75, h.z + 2.6), V(h.x, h.y + 0.25, h.z), true, 9);
+            w.exposure = 0.42; // keep the head in shadow so eyes and fangs carry it
           },
           update: (k) => {
             sm.eyes = Math.min(1, k / 0.3); // the eyes ignite
@@ -443,7 +455,7 @@ export class Game {
             headGrab.copy(sm.head.position).add(V(0, -0.05, 0.3));
             if (k < 0.14) L.pos.lerpVectors(from, headGrab, ease(take));
             else if (k < 0.9) {
-              if (!took) { took = true; w.rig.shake(0.9); L.flare = 1; }
+              if (!took) { took = true; w.rig.shake(0.9); L.flare = 1; w.exposure = 1; }
               const c = (k - 0.14) / 0.76;
               const s = ease(c) * endS;
               sm.carry = s;

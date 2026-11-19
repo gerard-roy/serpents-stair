@@ -10,7 +10,7 @@ import { Hud, PlayerView, Sound, StartOptions } from './types';
 import { World } from './world';
 import { slotOffset, tilePos } from './world/temple';
 
-export interface Beat { length: number; start?: () => void; update?: (k: number, dt: number) => void; end?: () => void }
+export interface Beat { length: number; start?: () => void; update?: (k: number, dt: number) => void; end?: () => void; /** while true the beat does not start (capped at 3s) */ hold?: () => boolean }
 
 const SAVE_KEY = 'serpents-stair.game';
 const ease = (k: number) => k * k * (3 - 2 * k);
@@ -26,6 +26,7 @@ export class Game {
   private curT = 0;
   private waiting = false; // waiting on a human choice
   private rivalTurn = false;
+  private held = 0;
   fast = false; // Space held
   private introBeat: Beat | null = null;
   private nextFirst = -1;
@@ -49,7 +50,7 @@ export class Game {
     this.trail.scale.setScalar(1.6);
     world.scene.add(this.ropeLine, this.trail);
     world.sky.onFlash = (delay) => {
-      window.setTimeout(() => { this.sound.play('thunder'); if (this.screen === 'climb') this.world.rig.shake(0.12); }, delay * 1000);
+      window.setTimeout(() => { this.sound.play('thunder'); if (this.screen === 'climb') this.shake(0.12); }, delay * 1000);
     };
   }
 
@@ -141,8 +142,11 @@ export class Game {
     let left = dt * speed;
     while (left > 0) {
       if (!this.cur) {
-        this.cur = this.queue.shift() ?? null;
-        if (!this.cur) break;
+        const nx = this.queue[0];
+        if (!nx) break;
+        if (nx.hold && this.held < 3 && nx.hold()) { this.held += dt; break; }
+        this.held = 0;
+        this.cur = this.queue.shift()!;
         this.curT = 0;
         this.cur.start?.();
       }
@@ -164,6 +168,8 @@ export class Game {
   private stageCam(pos: THREE.Vector3, look: THREE.Vector3, cut = false, stiffness = 14) {
     if (!this.rivalTurn) this.world.rig.stage(pos, look, cut, stiffness);
   }
+
+  private shake(a: number) { if (!this.rivalTurn) this.world.rig.shake(a); }
 
   private followFocus() {
     const s = this.state;
@@ -195,7 +201,8 @@ export class Game {
     this.rivalTurn = !me.human;
     if (!me.human) {
       this.waiting = true;
-      this.push({ length: 0.55, end: () => { this.waiting = false; this.act(chooseAction(s)); } });
+      // rivals wait until the camera has come to rest after the player's turn
+      this.push({ length: 0.55, hold: () => !this.world.rig.atRest, end: () => { this.waiting = false; this.act(chooseAction(s)); } });
       this.waiting = false;
       return;
     }
@@ -464,7 +471,7 @@ export class Game {
             headGrab.copy(sm.head.position).add(V(0, -0.05, 0.3));
             if (k < 0.14) L.pos.lerpVectors(from, headGrab, ease(take));
             else if (k < 0.9) {
-              if (!took) { took = true; w.rig.shake(0.9); L.flare = 1; w.exposure = 1; }
+              if (!took) { took = true; this.shake(0.9); L.flare = 1; w.exposure = 1; }
               const c = (k - 0.14) / 0.76;
               const s = ease(c) * endS;
               sm.carry = s;
@@ -476,7 +483,7 @@ export class Game {
               // the camera follows the fall from above and in front
               this.stageCam(V(pt.x * 0.7 + 1.6, pt.y + 3.0, pt.z + 6.6), V(pt.x, pt.y, pt.z - 0.3), false, 110);
             } else {
-              if (!thud) { thud = true; snd.play('thud'); w.rig.shake(0.5); sm.carry = -1; }
+              if (!thud) { thud = true; snd.play('thud'); this.shake(0.5); sm.carry = -1; }
               const c = (k - 0.9) / 0.1;
               sm.pointAt(endS, pt);
               L.pos.lerpVectors(pt.add(RIDE), to, c);
@@ -551,14 +558,14 @@ export class Game {
             L.pos.x += Math.sin(k * 40) * 0.03 * (1 - drag);
             this.trail.position.copy(L.pos); this.trail.material.opacity = 0.75 * Math.sin(k * Math.PI);
             this.trail.scale.setScalar(1.6 + Math.sin(k * 30) * 0.3);
-            if (drag > 0 && drag < 0.1) w.rig.shake(0.5);
+            if (drag > 0 && drag < 0.1) this.shake(0.5);
             this.stageCam(V(L.pos.x * 0.6 + 2.4, L.pos.y + 2.6, L.pos.z + 5.6), V(L.pos.x, L.pos.y + 0.2, L.pos.z - 0.4), false, 10);
           },
           end: () => {
             const L = w.lanterns[e.target];
             L.pos.copy(pb); L.squash = 0.7; this.trail.material.opacity = 0; this.trail.scale.setScalar(1.6);
             for (const sm of w.serpents.list) sm.eyes = 0;
-            snd.play('thud'); w.rig.shake(0.4); w.rig.stage(null);
+            snd.play('thud'); this.shake(0.4); w.rig.stage(null);
             this.setShown(e.target, e.to); w.temple.pulseTile(e.to, '#3FD6A0');
             hud.journal(`The temple drags ${this.who(e.target) === 'You' ? 'you' : this.name(e.target)} down to ${e.to}.`, '#B48CFF');
           },
@@ -641,7 +648,7 @@ export class Game {
         else this.hud.banner(c.name, 'The temple keeps you another night', c.color, 2.8);
         this.hud.journal(`${this.who(p)} reach${this.isYou(p) ? '' : 'es'} the summit.`, c.color);
         w.rig.stage(V(shrine.x + 5.5, shrine.y - 0.6, shrine.z + 11), V(shrine.x + 1.2, shrine.y + 3.4, shrine.z), false, 5);
-        w.rig.shake(0.3);
+        this.shake(0.3);
       },
       update: (k) => {
         // the fire becomes a beam, the rain stops and the clouds part

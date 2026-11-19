@@ -56,6 +56,8 @@ export class CameraRig {
     if (cut) { this.pos.snap(pos); this.look.snap(look!); }
   }
   get staged(): boolean { return this.scene !== null; }
+  /** True once the camera has finished easing to where it is headed. */
+  get atRest(): boolean { return this.pos.v.lengthSq() < 0.0004 && this.pos.x.distanceToSquared(this.pos.to) < 0.0009 && this.look.x.distanceToSquared(this.look.to) < 0.0009; }
   shake(a: number) { this.shakeAmt = Math.max(this.shakeAmt, a); }
   snap() { this.aim(); this.pos.snap(this.pos.to); this.look.snap(this.look.to); }
 

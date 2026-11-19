@@ -440,6 +440,7 @@ export class Game {
         const sm = w.serpents.list[e.serpent];
         const from = V(), to = V(), pt = V(), headGrab = V();
         let endS = 1, took = false, thud = false;
+        const RIDE = V(0, 0.42, 0.3);
         return [{
           length: 1.4,
           start: () => {
@@ -460,17 +461,17 @@ export class Game {
               const s = ease(c) * endS;
               sm.carry = s;
               sm.pointAt(s, pt);
-              L.pos.copy(pt);
+              L.pos.copy(pt).add(RIDE); // ride on top of the coil, in view
               sm.rear = 0.2 * (1 - c); sm.jaw = 0.6 * (1 - c);
               if (e.charmed) sm.eyes = 1 - c * 0.85; // it dozes
               this.trail.position.copy(pt); this.trail.material.opacity = 0.5;
               // the camera follows the fall from above and in front
-              w.rig.stage(V(pt.x * 0.7 + 1.6, pt.y + 2.6, pt.z + 5.4), V(pt.x, pt.y, pt.z - 0.3), false, 12);
+              w.rig.stage(V(pt.x * 0.7 + 1.6, pt.y + 3.0, pt.z + 6.6), V(pt.x, pt.y, pt.z - 0.3), false, 110);
             } else {
               if (!thud) { thud = true; snd.play('thud'); w.rig.shake(0.5); sm.carry = -1; }
               const c = (k - 0.9) / 0.1;
               sm.pointAt(endS, pt);
-              L.pos.lerpVectors(pt, to, c);
+              L.pos.lerpVectors(pt.add(RIDE), to, c);
               L.pos.y += Math.sin(c * Math.PI) * 0.25;
               this.trail.material.opacity = 0.5 * (1 - c);
             }

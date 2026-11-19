@@ -24,3 +24,4 @@ Choices made where the spec left room, and why.
 ## Delivery
 - Vite `base: './'` so the same build works at any GitHub Pages sub-path.
 - Art files are probed by exact name at run time; anything missing keeps its procedural stand-in.
+- **Serpent carry.** The lantern rides on top of the coil (not inside it) and the camera follows it stiffly, so it stays in view the whole way down.

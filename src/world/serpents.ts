@@ -154,7 +154,7 @@ function buildOne(index: number): SerpentModel & { tick(t: number, dt: number): 
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
   geo.setAttribute('bodyUv', new THREE.Float32BufferAttribute(buv, 2));
   geo.setIndex(idx);
-  const mat: StoneMaterial = stoneMaterial({ color: 0x59615c, moss: 0.85, wet: 0.9, scales: true, roughness: 0.78 });
+  const mat: StoneMaterial = stoneMaterial({ color: 0x8a968e, moss: 0.6, wet: 0.9, scales: true, roughness: 0.78 });
   const body = new THREE.Mesh(geo, mat);
   body.castShadow = body.receiveShadow = true;
   body.frustumCulled = false;

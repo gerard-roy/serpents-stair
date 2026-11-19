@@ -231,7 +231,7 @@ export function buildTemple(): Temple {
   numGeo.setIndex(idx);
   numGeo.computeVertexNormals();
   const numbers = new THREE.Mesh(numGeo, new THREE.MeshStandardMaterial({
-    color: 0x0b0d0c, alphaMap: atlas, transparent: true, roughness: 0.35, depthWrite: false, opacity: 0.86,
+    color: 0xd9bd7a, emissive: 0x5a431c, alphaMap: atlas, transparent: true, roughness: 0.4, metalness: 0.3, depthWrite: false, opacity: 0.9,
   }));
   numbers.receiveShadow = true;
   group.add(numbers);

@@ -41,11 +41,11 @@ export class CameraRig {
   resize(w: number, h: number) {
     this.aspect = w / h;
     this.camera.aspect = this.aspect;
-    this.camera.fov = this.aspect < 0.8 ? 50 : 38;
+    this.camera.fov = this.aspect < 0.8 ? 52 : 44;
     this.camera.updateProjectionMatrix();
     const th = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
     const halfW = this.aspect < 0.8 ? 6.6 : 9.6;
-    this.templeDistance = Math.max(8.3 / th, halfW / (th * this.aspect));
+    this.templeDistance = Math.max(8.9 / th, halfW / (th * this.aspect));
   }
 
   /** A staged camera. With cut, it jumps there; otherwise it eases. Pass null to hand back to the view. */
@@ -63,9 +63,9 @@ export class CameraRig {
     if (this.scene) { this.pos.to.copy(this.scene.pos); this.look.to.copy(this.scene.look); return; }
     if (this.view === 'temple') {
       const yaw = THREE.MathUtils.degToRad(this.aspect < 0.8 ? 14 : 24) + this.yaw + this.autoOrbit;
-      const pitch = THREE.MathUtils.degToRad(this.aspect < 0.8 ? 27 : 19) + this.pitch;
+      const pitch = THREE.MathUtils.degToRad(this.aspect < 0.8 ? 24 : 15.5) + this.pitch;
       const d = this.templeDistance * this.zoom;
-      const c = this.look.to.set(this.aspect < 0.8 ? 0 : 0.5, this.aspect < 0.8 ? 3.6 : 4.3, -4.6);
+      const c = this.look.to.set(this.aspect < 0.8 ? 0 : 0.5, this.aspect < 0.8 ? 4.4 : 5.3, -4.6);
       this.pos.to.set(c.x + Math.sin(yaw) * Math.cos(pitch) * d, c.y + Math.sin(pitch) * d, c.z + Math.cos(yaw) * Math.cos(pitch) * d);
     } else {
       // behind and above the active lantern, six tiles back, looking up the stairs

@@ -81,7 +81,9 @@ export function buildSky(scene: THREE.Scene): Sky {
   sun.position.set(-30, 7, -6);
   const bolt = new THREE.DirectionalLight(0xbcd4ff, 0);
   bolt.position.set(24, 30, 6);
-  group.add(hemi, sun, bolt);
+  const key = new THREE.DirectionalLight(0x5b8fb0, 1.15); // storm glow from the front right
+  key.position.set(12, 22, 16);
+  group.add(hemi, sun, bolt, key);
 
   // --- jungle: three depth layers of dark canopy that sway, on arcs around the temple
   const canopyMat = (depth: number, seed: number) => new THREE.ShaderMaterial({
@@ -110,7 +112,7 @@ export function buildSky(scene: THREE.Scene): Sky {
         gl_FragColor = vec4(col, a);
       }`,
   });
-  const layers: [number, number, number, number][] = [[21, 15, 0.1, 3.0], [31, 22, 0.5, 11.0], [46, 31, 1.0, 23.0]];
+  const layers: [number, number, number, number][] = [[23, 12, 0.1, 3.0], [34, 15, 0.5, 11.0], [50, 19, 1.0, 23.0]];
   layers.forEach(([radius, height, depth, seed], i) => {
     const g = new THREE.CylinderGeometry(radius, radius, height, 64, 1, true, Math.PI * 0.42, Math.PI * 1.16);
     const m = new THREE.Mesh(g, canopyMat(depth, seed));
@@ -121,7 +123,7 @@ export function buildSky(scene: THREE.Scene): Sky {
   });
 
   // --- nearer treetops flanking the stairs, for parallax
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x0c1f17, roughness: 0.9, flatShading: true });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x040d09, roughness: 1, flatShading: true });
   const leafTime = { value: 0 };
   leafMat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = leafTime;
@@ -132,7 +134,7 @@ export function buildSky(scene: THREE.Scene): Sky {
         transformed.x += sw * (0.5 + position.y); transformed.z += sw * 0.5 * (0.5 + position.y);`);
   };
   const blob = new THREE.IcosahedronGeometry(1, 1);
-  const count = 150;
+  const count = 230;
   const trees = new THREE.InstancedMesh(blob, leafMat, count);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   let rs = 7;
@@ -140,11 +142,11 @@ export function buildSky(scene: THREE.Scene): Sky {
   const trunkGeos: THREE.BufferGeometry[] = [];
   for (let i = 0; i < count; i++) {
     const side = i % 2 ? 1 : -1;
-    const behind = i >= 110;
+    const behind = i >= 180;
     const z = behind ? -15 - rnd() * 5 : 5 - rnd() * 19;
-    const x = behind ? (rnd() - 0.5) * 30 : side * (10.5 + rnd() * 9 + Math.max(0, z + 6) * 0.9);
-    const h = behind ? 8 + rnd() * 5 : 1 + rnd() * 2.5 + Math.max(0, -z - 2) * 0.55;
-    const s = 1.5 + rnd() * 1.9;
+    const x = behind ? (rnd() - 0.5) * 30 : side * (12 + rnd() * 9 + Math.max(0, z + 6) * 0.9);
+    const h = behind ? 7 + rnd() * 4 : 1 + rnd() * 2.5 + Math.max(0, -z - 2) * 0.55;
+    const s = 0.9 + rnd() * 1.5;
     e.set(rnd() * 3, rnd() * 3, rnd() * 3);
     m4.compose(new THREE.Vector3(x, h, z), q.setFromEuler(e), new THREE.Vector3(s * 1.25, s * 0.8, s * 1.25));
     trees.setMatrixAt(i, m4);

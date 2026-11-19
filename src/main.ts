@@ -140,4 +140,6 @@ function frame(now: number) {
 requestAnimationFrame(frame);
 
 // hooks for the test and verification scripts
+const loading = document.getElementById('loading');
+if (loading) { loading.style.opacity = '0'; setTimeout(() => loading.remove(), 600); }
 Object.assign(window, { __game: () => game, __world: world, __audio: audio });

@@ -20,11 +20,11 @@ Checked on the local build in headless Chrome. That browser renders in software 
 | 14 | Heartbeat starts in the last stretch | Pass (code and journal) | "Hearts pound" entry at tile 95; audio not listened to |
 | 15 | Space speeds up beats; any key skips the intro | Pass | Used by the test scripts |
 | 16 | Title, cards, rules switch, rival count by keyboard, mouse, touch | Partly | Mouse and keyboard driven; touch not driven on a real device |
-| 17 | Art loads by name; stand-ins when absent | Pass | A test `portraits/ilse.jpg` replaced the stand-in with no code change |
+| 17 | Art loads by name; stand-ins when absent | Pass | Stand-ins showed before the art existed; the nine art files now load on the live title screen with no code change |
 | 18 | Journal, gauge and rows correct through a full game | Pass | Full games to the result screen |
 | 19 | 390 by 844: no overlap, buttons at least 44px | Pass | Phone screenshots; no visible button under 44px |
 | 20 | Every sound plays at its moment; mixer changes levels | Not verified | Wired in code; this machine has no audio output to listen to |
 | 21 | Generated score plays with no music file | Not verified | Same reason |
 | 22 | Frame-time log meets targets at Medium and Low | Not verified | Software renderer only: about 49 ms per frame at every level |
-| 23 | Live link serves latest commit; CI tests before deploy | Blocked | Workflow runs tests then deploys, but Pages is not enabled on the repository |
+| 23 | Live link serves latest commit; CI tests before deploy | Pass | https://gerard-roy.github.io/serpents-stair/ serves the same bundle as a local build of `main`; the workflow runs `npm test` before deploying |
 | 24 | README covers play, run, test, deploy, art | Pass | `README.md` |

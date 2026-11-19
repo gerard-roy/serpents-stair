@@ -160,10 +160,18 @@ export class Game {
     this.followFocus();
   }
 
+  /** Staged shots are for the player's own turns; the camera holds still while rivals move. */
+  private stageCam(pos: THREE.Vector3, look: THREE.Vector3, cut = false, stiffness = 14) {
+    if (!this.rivalTurn) this.world.rig.stage(pos, look, cut, stiffness);
+  }
+
   private followFocus() {
     const s = this.state;
     if (!s || !this.world.lanterns.length) return;
-    this.world.rig.focus.copy(this.world.lanterns[Math.min(s.current, this.world.lanterns.length - 1)].pos);
+    // the climber view stays with the player; it does not swing to rivals on their turns
+    let p = s.current;
+    if (!s.players[p].human) { const h = s.players.findIndex((x) => x.human); if (h >= 0) p = h; }
+    this.world.rig.focus.copy(this.world.lanterns[Math.min(p, this.world.lanterns.length - 1)].pos);
   }
 
   /** Called whenever the queue runs dry: decides who acts next. */
@@ -330,7 +338,7 @@ export class Game {
           start: () => {
             hit = 0;
             // the camera eases toward the altar
-            w.rig.stage(V(altar.x + 2.3, altar.y + 2.3, altar.z + 4.6), V(altar.x - 0.6, altar.y + 0.5, altar.z - 0.6), false, 16);
+            this.stageCam(V(altar.x + 2.3, altar.y + 2.3, altar.z + 4.6), V(altar.x - 0.6, altar.y + 0.5, altar.z - 0.6), false, 16);
             if (e.loaded) w.die.glow = 1;
           },
           update: (k) => {
@@ -403,7 +411,7 @@ export class Game {
             L.pos.lerpVectors(pa, pt, inK).lerp(pb, outK);
             if (outK > 0) L.pos.y += Math.sin(outK * Math.PI) * 0.2;
             // the camera rises with it
-            w.rig.stage(V(L.pos.x * 0.6 + 2.6, L.pos.y + 2.4, L.pos.z + 6.2), V(L.pos.x, L.pos.y + 0.5, L.pos.z - 0.8), false, 10);
+            this.stageCam(V(L.pos.x * 0.6 + 2.6, L.pos.y + 2.4, L.pos.z + 6.2), V(L.pos.x, L.pos.y + 0.5, L.pos.z - 0.8), false, 10);
           },
           end: () => {
             const L = w.lanterns[e.p];
@@ -424,8 +432,8 @@ export class Game {
             snd.play('strike');
             // the one hard cut: a close-up on the head
             const h = sm.headPos;
-            w.rig.stage(V(h.x + (h.x > 0 ? -1.5 : 1.5), h.y + 0.75, h.z + 2.6), V(h.x, h.y + 0.25, h.z), true, 9);
-            w.exposure = 0.42; // keep the head in shadow so eyes and fangs carry it
+            this.stageCam(V(h.x + (h.x > 0 ? -1.5 : 1.5), h.y + 0.75, h.z + 2.6), V(h.x, h.y + 0.25, h.z), true, 9);
+            if (!this.rivalTurn) w.exposure = 0.42; // keep the head in shadow so eyes and fangs carry it
           },
           update: (k) => {
             sm.eyes = Math.min(1, k / 0.3); // the eyes ignite
@@ -466,7 +474,7 @@ export class Game {
               if (e.charmed) sm.eyes = 1 - c * 0.85; // it dozes
               this.trail.position.copy(pt); this.trail.material.opacity = 0.5;
               // the camera follows the fall from above and in front
-              w.rig.stage(V(pt.x * 0.7 + 1.6, pt.y + 3.0, pt.z + 6.6), V(pt.x, pt.y, pt.z - 0.3), false, 110);
+              this.stageCam(V(pt.x * 0.7 + 1.6, pt.y + 3.0, pt.z + 6.6), V(pt.x, pt.y, pt.z - 0.3), false, 110);
             } else {
               if (!thud) { thud = true; snd.play('thud'); w.rig.shake(0.5); sm.carry = -1; }
               const c = (k - 0.9) / 0.1;
@@ -519,7 +527,7 @@ export class Game {
             L.pos.lerpVectors(pa, pb, haul); L.pos.z += Math.sin(haul * Math.PI) * 0.35; L.pos.y += Math.sin(haul * Math.PI) * 0.2;
             const g = this.ropeLine.geometry.attributes.position as THREE.BufferAttribute;
             g.setXYZ(0, L.pos.x, L.pos.y + 0.35, L.pos.z); g.setXYZ(1, tip.x, tip.y, tip.z); g.needsUpdate = true;
-            w.rig.stage(V(L.pos.x * 0.6 + 2.2, L.pos.y + 2.0, L.pos.z + 5.2), V(L.pos.x, L.pos.y + 0.6, L.pos.z - 0.6), false, 10);
+            this.stageCam(V(L.pos.x * 0.6 + 2.2, L.pos.y + 2.0, L.pos.z + 5.2), V(L.pos.x, L.pos.y + 0.6, L.pos.z - 0.6), false, 10);
           },
           end: () => {
             this.ropeLine.visible = false; w.lanterns[e.p].pos.copy(pb); w.lanterns[e.p].squash = 0.5;
@@ -544,7 +552,7 @@ export class Game {
             this.trail.position.copy(L.pos); this.trail.material.opacity = 0.75 * Math.sin(k * Math.PI);
             this.trail.scale.setScalar(1.6 + Math.sin(k * 30) * 0.3);
             if (drag > 0 && drag < 0.1) w.rig.shake(0.5);
-            w.rig.stage(V(L.pos.x * 0.6 + 2.4, L.pos.y + 2.6, L.pos.z + 5.6), V(L.pos.x, L.pos.y + 0.2, L.pos.z - 0.4), false, 10);
+            this.stageCam(V(L.pos.x * 0.6 + 2.4, L.pos.y + 2.6, L.pos.z + 5.6), V(L.pos.x, L.pos.y + 0.2, L.pos.z - 0.4), false, 10);
           },
           end: () => {
             const L = w.lanterns[e.target];
